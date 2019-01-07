@@ -1,0 +1,15 @@
+#!/usr/bin/expect
+
+set host [lindex $argv 0]
+set passwd [lindex $argv 1]
+spawn ssh root@$host
+
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password" { send "$passwd\r" }
+}
+
+expect "]*"
+send "date\r"
+expect "]*"
+send "exit\r"
