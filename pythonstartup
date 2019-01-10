@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Python startup file, put this file under ~/ and rename as .pythonstartup.
+# Python startup file, executed when entering the interactive mode.
+# This file is suggested to be put under ~/ and renamed as .pythonstartup.
+# An environment variable 'PYTHONSTARTUP' should be defined as:
+#
+# export PYTHONSTARTUP=".pythonstartup"
+#
+# Put the above line in ~/.bashrc or ~/.bash_profile.
 #
 # Author : Liu Sibo
 # Email  : liusibojs@dangdang.com
-# Date   : 2019-01-09
+# Date   : 2019-01-10
 
 import sys
 import readline
