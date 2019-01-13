@@ -5,7 +5,7 @@
 #
 # Author : Liu Sibo
 # Email  : liusibojs@dangdang.com
-# Date   : 2019-01-12
+# Date   : 2019-01-13
 
 import socket
 import time
@@ -13,7 +13,8 @@ import sys
 import argparse
 
 logfile = '/data/conn_fail_log'
-desthosts = ('192.168.0.1','192.168.0.2','192.168.0.3')
+# '123.123.123.123' is a test IP to show how the 'failed' branch works
+desthosts = ('121.41.175.38','121.41.175.23','www.baidu.com','123.123.123.123')
 destport = 80
 interval = 10
 hostname = socket.gethostname()
@@ -41,10 +42,11 @@ def main(args):
                     s.settimeout(3)
                     s.connect((host, destport))
                     s.close()
-                except Exception as e:
+                except Exception,e:
                     print(e)
                     write_to_log(host, destport)
             time.sleep(interval)
+    # if interval is not specified on command line, the test will be done only once
     else:
         for host in desthosts:
             try:
@@ -52,7 +54,8 @@ def main(args):
                 s.settimeout(3)
                 s.connect((host, destport))
                 s.close()
-            except Exception as e:
+                print('%s connected to %s on port %s successfully' % (localip, host, destport))
+            except Exception:
                 print('%s failed to connect to %s on port %s' % (localip, host, destport))
 
 if __name__ == "__main__":
