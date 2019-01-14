@@ -1,0 +1,13 @@
+- name: test connectivity
+  hosts: all
+  vars:
+    python_script: connectivity_test.py
+  gather_facts: False
+  tasks:
+    - name: test connectivity once
+      script: "{{ python_script }}"
+      args:
+        executable: python
+      register: results
+    - debug:
+        var: results.stdout_lines
