@@ -1,10 +1,15 @@
 #!/bin/bash
 
-# Monitor disk IO utility.
+# Monitor disk IO utility and report those higher than 80%.
+# It is suggested that run this script once a minute.
 #
 # Author : Liu Sibo
 # Email  : liusibojs@dangdang.com
-# Date   : 2019-01-18
+# Date   : 2019-01-19
+
+TODAY=$(date +%Y%m%d)
+LOGDIR=/tmp/iologs
+TODAYDIR=$LOGDIR/$TODAY
 
 if ! which iostat &> /dev/null
 then
@@ -16,37 +21,37 @@ then
     yum install -y iotop
 fi
 
-logdir=/tmp/iolog
-[ $logdir ] || mkdir $logdir
+DEVICES=$(iostat -dx | egrep -v '^$|Device:|CPU\)' | awk '{print $1}')
 
-date_stamp=`date +%F`
+[ -d $TODAYDIR ] || mkdir -p $TODAYDIR
+
+# collect IO extended statistics for all devices
+CURRTIME=$(date +%H%M%S)
+iostat -dx 1 5 > $TODAYDIR/iostat_${CURRTIME}.log
 
 # get the sum of %util for a single device and compute an average
 function get_io() {
     dev=$1
-    iostat -dx 1 5 > $logdir/iostat_${dev}.log
     sum=0
-    for util in $(grep "^$dev" $logdir/iostat.log | awk '{print $NF}' | cut -d. -f1)
+    for util in $(grep "^$dev" $TODAYDIR/iostat_${CURRTIME}.log | awk '{print $NF}' | cut -d. -f1)
     do
         sum=$[$sum+$util]
     done
     echo $[$sum/5]
 }
 
-while true
+# iterate all devices
+for dev in $DEVICES
 do
-    # iterate all devices
-    for dev in $(iostat -dx | egrep -v '^$|Device:|CPU\)' | awk '{print $1}')
-    do
-        io=$(get_io $dev)
-        if [ $io -ge 80 ]
-        then
-            date >> $logdir/$date_stamp
-            cat $logdir/iostat_${dev}.log >> $logdir/$date_stamp
-            iotop -obn2 >> $logdir/$date_stamp
-            echo -e "###################################\n" >> $logdir/$date_stamp
-        fi
-    done
-    sleep 60
+    io=$(get_io $dev)
+    if [ $io -ge 80 ]
+    then
+        date >> $LOGDIR/highIO_${TODAY}.log
+        echo -e "\nIO utility of $dev goes beyond 80%\n" >> $LOGDIR/highIO_${TODAY}.log
+        cat $TODAYDIR/iostat_${CURRTIME}.log | grep $dev >> $LOGDIR/highIO_${TODAY}.log
+        echo "" >> $LOGDIR/highIO_${TODAY}.log
+        iotop -obn2 >> $LOGDIR/highIO_${TODAY}.log
+        echo -e "\n##########################################\n" >> $LOGDIR/highIO_${TODAY}.log
+    fi
 done
 
