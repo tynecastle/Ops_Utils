@@ -32,6 +32,22 @@ function block_ip() {
 }
 
 function unblock_ip() {
+    # record those IPs that have less than 5 packets during last 30 minutes as "good IPs"
+    iptables -nvL INPUT | sed '1,2d' | awk '$1<5{print $8}' > /tmp/good_ip.list
+    n=$(wc -l /tmp/good_ip.list | awk '{print $1}')
+    # unblock the good IPs when the list is not empty
+    if [ $n -ne 0 ]
+    then
+        for ip in $(cat /tmp/good_ip.list)
+        do
+            iptables -D INPUT -s $ip -j REJECT
+        done
+        # record the unblocked IPs in a separate file
+        echo "$(date '+%F %H:%M:%S') The following IPs are unblocked:" >> /tmp/unblock_ip.log
+        cat /tmp/good_ip.list >> /tmp/unblock_ip.log
+    fi
+    # reset the traffic counter of netfilter
+    iptables -Z
 }
 
 t=$(date +%M)
@@ -44,3 +60,4 @@ then
 else
     block_ip
 fi
+
