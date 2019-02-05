@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# Block IPs that have large amount of visits in short term
+# Block IPs that make more than 100 requests in a single minute,
+# and unblock IPs from which less than 5 packets are received in 30 minutes.
 
 # Author : Liu Sibo
 # Email  : liusibojs@dangdang.com
-# Date   : 2019-02-03
+# Date   : 2019-02-05
 
 d1=$(date -d "-1 min" +%F)
 t1=$(date -d "-1 min" +%H:%M)
@@ -13,7 +14,7 @@ logFile=/data/joblog/httpd/access_log
 
 function block_ip() {
     egrep "$lastMin:[0-5]+" $logFile > /tmp/last_min.log
-    # record those IPs that have more than 100 visits during last minute as "bad IPs"
+    # record those IPs that made more than 100 requests during last minute as "bad IPs"
     awk '{print $1}' /tmp/last_min.log | sort -n | uniq -c | sort -n | awk '$1>100{print $2}' > /tmp/bad_ip.list
     # the total number of bad IPs
     n=$(wc -l /tmp/bad_ip.list | awk '{print $1}')
@@ -32,7 +33,7 @@ function block_ip() {
 }
 
 function unblock_ip() {
-    # record those IPs that have less than 5 packets during last 30 minutes as "good IPs"
+    # record IPs from which less than 5 packets have been received during last 30 minutes as "good IPs"
     iptables -nvL INPUT | sed '1,2d' | awk '$1<5{print $8}' > /tmp/good_ip.list
     n=$(wc -l /tmp/good_ip.list | awk '{print $1}')
     # unblock the good IPs when the list is not empty
@@ -45,6 +46,7 @@ function unblock_ip() {
         # record the unblocked IPs in a separate file
         echo "$(date '+%F %H:%M:%S') The following IPs are unblocked:" >> /tmp/unblock_ip.log
         cat /tmp/good_ip.list >> /tmp/unblock_ip.log
+        echo "" >> /tmp/unblock_ip.log
     fi
     # reset the traffic counter of netfilter
     iptables -Z
