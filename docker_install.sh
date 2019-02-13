@@ -28,6 +28,14 @@ yum remove docker \
 
 # set up docker repository
 yum install -y -q yum-utils device-mapper-persistent-data lvm2
+for app in yum-utils device-mapper-persistent-data lvm2
+do
+    if [[ -z $(rpm -q $app) ]]
+    then
+        echo -e "\033[31mFailed to install $app. Please look into it! \033[0m"
+        exit 2
+    fi
+done
 yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
 # install the latest version of docker-ce
